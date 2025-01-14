@@ -1,0 +1,85 @@
+name: "Website content: Site 1"
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - site1/**
+    branches:
+      - main
+
+env:
+  AWS_REGION: "eu-west-1"
+  AWS_PIPELINES_ROLE_ARN: ""
+  AWS_TARGET_ACCOUNT_ROLE_ARN: ""
+  TF_VERSION: "1.9.8"
+  TG_VERSION: "0.67.3"
+  WEBSITE_HOSTING_DIR: "infra-repo/infrastructure/live/prod-shared/us-east-1/website-hosting"
+  WEBSITE_NAME: "site1"
+  WEBSITE_DIR: "site1"
+
+jobs:
+  deploy-website-content:
+    name: Deploy website content
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    defaults:
+      run:
+        working-directory: "${{env.WEBSITE_DIR}}"
+
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{secrets.GH_PAT}}
+          submodules: true
+
+      - name: Configure aws pipeline credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_PIPELINES_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: "${{env.WEBSITE_NAME}}-session"
+
+      - name: Retrieve target content bucket
+        uses: gruntwork-io/terragrunt-action@v2
+        id: retrieve-s3-bucket
+        with:
+          tg_dir: ${{ env.WEBSITE_HOSTING_DIR }}
+          tf_version: ${{ env.TF_VERSION }}
+          tg_version: ${{ env.TG_VERSION }}
+          tg_command: "output --terragrunt-log-level error -json content_buckets"
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: latest
+          extended: true
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+
+      - name: Build site
+        run: |
+          npm install
+          npm run build-upstream
+
+      - name: Configure target account aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_TARGET_ACCOUNT_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: "${{env.WEBSITE_NAME}}-session"
+          role-chaining: true
+
+      - name: Publich site to target bucket
+        run: aws s3 sync --delete public/ s3://$BUCKET_NAME
+        env:
+          BUCKET_NAME: "${{ fromJSON(steps.retrieve-s3-bucket.outputs.tg_action_output)[env.WEBSITE_NAME] }}"

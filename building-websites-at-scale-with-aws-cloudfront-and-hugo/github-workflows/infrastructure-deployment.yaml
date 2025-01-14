@@ -1,0 +1,55 @@
+name: "Websites Infrastructure"
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - infrastructure/**
+    branches:
+      - main
+
+env:
+  AWS_REGION: "eu-west-1"
+  AWS_PIPELINES_ROLE_ARN: ""
+  TF_VERSION: "1.9.8"
+  TG_VERSION: "0.67.3"
+  WORKING_DIR: "infrastructure/live/prod-shared/us-east-1/website-hosting"
+
+jobs:
+  deploy-infrastructure:
+    name: Terragrunt Infrastructure Deployment
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_PIPELINES_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure configuration is valid
+        uses: gruntwork-io/terragrunt-action@v2
+        id: terragrunt-validate
+        with:
+          tg_dir: ${{ env.WORKING_DIR }}
+          tf_version: ${{ env.TF_VERSION }}
+          tg_version: ${{ env.TG_VERSION }}
+          tg_command: "validate"
+
+      - name: Ensure infrastructure is live
+        uses: gruntwork-io/terragrunt-action@v2
+        id: terragrunt-apply
+        with:
+          tf_version: ${{ env.TF_VERSION }}
+          tg_version: ${{ env.TG_VERSION }}
+          tg_dir: ${{ env.WORKING_DIR }}
+          tg_add_approve: 1
+          tg_command: "apply --terragrunt-log-level debug --terragrunt-debug"
