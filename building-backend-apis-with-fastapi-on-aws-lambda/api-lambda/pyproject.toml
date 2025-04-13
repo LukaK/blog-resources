@@ -1,0 +1,30 @@
+[project]
+name = "api-lambda"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Luka Krapic", email = "luka.krapic@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "mylib",
+]
+
+[project.scripts]
+api-lambda = "api_lambda:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+mylib = { path = "../layers/mylib", editable = true }
+
+[dependency-groups]
+dev = [
+    "fastapi[standard]>=0.115.12",
+    "pytest>=8.3.5",
+    "pytest-xdist>=3.6.1",
+    "requests>=2.32.3",
+]
