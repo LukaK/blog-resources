@@ -1,2 +1,4 @@
 .aws-sam
 .venv
+terraform.tfstate
+terraform.tfstate.backup
