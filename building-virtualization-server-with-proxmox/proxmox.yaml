@@ -1,0 +1,12 @@
+---
+- name: Ensure server is configured
+  hosts: proxmox_servers
+  become: true
+  roles:
+    - role: update
+    - role: proxmox
+      ssl_key: "{{ i_ssl_key }}"
+      ssl_cert: "{{ i_ssl_cert }}"
+      default_gateway: "{{ i_default_gateway }}"
+      network_mask: "{{ i_network_mask }}"
+      nas_ip: "{{ i_nas_ip }}"
