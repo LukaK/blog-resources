@@ -1,0 +1,17 @@
+all:
+  vars:
+    i_ansible_public_key_path: ".ssh/ansible/id_rsa.pub"
+
+proxmox_servers:
+  hosts:
+    pve1.lab:
+      ansible_host: "IP ADDRESS"
+      i_ssl_key: "{{ vault_proxmox1_ssl_key }}"
+      i_ssl_cert: "{{ vault_proxmox1_ssl_cert }}"
+
+  vars:
+    i_default_gateway: "IP ADDRESS"
+    i_network_mask: "NETWORK MASK" # /24 /16 /8
+    i_bootstrap_user: "{{ vault_proxmox_servers_bootstrap_user }}"
+    i_bootstrap_pass: "{{ vault_proxmox_servers_bootstrap_pass }}"
+    i_nas_ip: "IP ADDRESS"

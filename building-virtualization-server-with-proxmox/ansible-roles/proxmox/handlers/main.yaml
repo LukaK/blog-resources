@@ -1,0 +1,10 @@
+---
+
+- name: Restart pveproxy
+  ansible.builtin.service:
+    name: pveproxy
+    state: restarted
+
+
+- name: Restart proxmox
+  ansible.builtin.reboot:

@@ -1,0 +1,6 @@
+/*
+!.gitignore
+!README.md
+!ubuntu-server-focal/
+!credentials.template.pkrvars.hcl
+!ubuntu-server-focal.pkrvars.hcl

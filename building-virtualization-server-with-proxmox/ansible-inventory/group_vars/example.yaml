@@ -1,0 +1,11 @@
+---
+vault_proxmox_servers_bootstrap_user: root
+vault_proxmox_servers_bootstrap_pass: 'password'
+vault_proxmox1_ssl_key: |
+  -----BEGIN RSA PRIVATE KEY-----
+  ...
+  -----END RSA PRIVATE KEY-----
+vault_proxmox1_ssl_cert: |
+  -----BEGIN CERTIFICATE-----
+  ...
+  -----END CERTIFICATE-----

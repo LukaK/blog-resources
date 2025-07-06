@@ -1,0 +1,24 @@
+---
+
+- name: Touch the files to set permissions
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: touch
+    modification_time: preserve
+    access_time: preserve
+  loop:
+    - /etc/pve/local/pveproxy-ssl.pem
+    - /etc/pve/local/pveproxy-ssl.key
+
+- name: Copy certificate
+  ansible.builtin.copy:
+    dest: "/etc/pve/local/pveproxy-ssl.pem"
+    content: "{{ ssl_cert }}"
+  notify: Restart pveproxy
+
+
+- name: Copy key file
+  ansible.builtin.copy:
+    dest: "/etc/pve/local/pveproxy-ssl.key"
+    content: "{{ ssl_key }}"
+  notify: Restart pveproxy

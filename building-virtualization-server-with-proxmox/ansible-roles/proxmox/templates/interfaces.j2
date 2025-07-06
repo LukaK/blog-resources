@@ -1,0 +1,29 @@
+auto lo
+iface lo inet loopback
+
+auto eno1
+iface eno1 inet manual
+
+auto enp4s0
+iface enp4s0 inet manual
+
+auto wlp3s0
+iface wlp3s0 inet manual
+
+auto bond0
+iface bond0 inet manual
+      bond-slaves eno1 enp4s0
+      bond-miimon 100
+      bond-mode 802.3ad
+      bond-xmit-hash-policy layer2+3
+
+
+auto vmbr0
+iface vmbr0 inet static
+        address {{ ansible_host }}{{ network_mask }}
+        gateway {{ default_gateway }}
+        bridge-ports bond0
+        bridge-stp off
+        bridge-fd 0
+	bridge-vlan-aware yes
+	bridge-vids 2-4094

@@ -1,0 +1,50 @@
+---
+
+- name: Comment out enterprise sources list
+  ansible.builtin.replace:
+    path: "{{ item }}"
+    regexp: '^([^#].*)'
+    replace: '#\1'
+  loop:
+    - /etc/apt/sources.list.d/pve-enterprise.list
+    - /etc/apt/sources.list.d/ceph.list
+
+
+- name: Configure interfaces file
+  ansible.builtin.template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart proxmox
+
+
+- name: Remove subscription message
+  ansible.builtin.replace:
+    path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+    regexp: '(^\s+)(Ext.Msg.show\(\{\s+title: gettext\(.No valid sub)'
+    replace: '\1void({//\2'
+  notify: Restart pveproxy
+
+
+- name: Include ssl configuration
+  ansible.builtin.include_tasks: copy_ssl_resources.yaml
+
+- name: Ensure external nfs share is configured
+  ansible.builtin.blockinfile:
+    path: /etc/pve/storage.cfg
+    append_newline: true
+    prepend_newline: true
+    block: |
+      nfs: backups
+              export /volume1/proxmox
+              path /mnt/pve/backups
+              server 192.168.60.95
+              content iso,backup,images
+              prune-backups keep-daily=7,keep-weekly=4
+  notify: Restart proxmox
+
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
