@@ -40,7 +40,7 @@
       nfs: backups
               export /volume1/proxmox
               path /mnt/pve/backups
-              server 192.168.60.95
+              server {{ nas_ip }}
               content iso,backup,images
               prune-backups keep-daily=7,keep-weekly=4
   notify: Restart proxmox
