@@ -1,6 +1,6 @@
 ---
 
-- name: Touch the files to set permissions
+- name: Ensure files are created with correct permissions
   ansible.builtin.file:
     path: "{{ item }}"
     state: touch
@@ -10,14 +10,13 @@
     - /etc/pve/local/pveproxy-ssl.pem
     - /etc/pve/local/pveproxy-ssl.key
 
-- name: Copy certificate
+- name: Ensure certificate is present
   ansible.builtin.copy:
     dest: "/etc/pve/local/pveproxy-ssl.pem"
     content: "{{ ssl_cert }}"
   notify: Restart pveproxy
 
-
-- name: Copy key file
+- name: Ensure private key is present
   ansible.builtin.copy:
     dest: "/etc/pve/local/pveproxy-ssl.key"
     content: "{{ ssl_key }}"

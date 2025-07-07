@@ -33,7 +33,7 @@
         mode: '0440'
 
 
-    - name: Comment out enterprise sources list
+    - name: Ensure enterprise sources list are commented out
       ansible.builtin.replace:
         path: "{{ item }}"
         regexp: '^([^#].*)'
@@ -42,7 +42,7 @@
         - /etc/apt/sources.list.d/pve-enterprise.list
         - /etc/apt/sources.list.d/ceph.list
 
-    - name: Update apt packages
+    - name: Ensure packages are updated
       ansible.builtin.apt:
         upgrade: dist
         update_cache: true
@@ -51,7 +51,7 @@
         cache_valid_time: 3600
         force_apt_get: true
 
-    - name: Install sudo package
+    - name: Ensure sudo package is installed
       ansible.builtin.apt:
         force_apt_get: true
         pkg: sudo
