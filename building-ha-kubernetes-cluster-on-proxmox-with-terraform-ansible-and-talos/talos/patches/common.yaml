@@ -1,0 +1,14 @@
+---
+machine:
+  install:
+    extraKernelArgs:
+      - net.ifnames=0
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: true
+
+
+cluster:
+  # install kubelet cert approver
+  extraManifests:
+    - https://raw.githubusercontent.com/alex1989hu/kubelet-serving-cert-approver/main/deploy/standalone-install.yaml
