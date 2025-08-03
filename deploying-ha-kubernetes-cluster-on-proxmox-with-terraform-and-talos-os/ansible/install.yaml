@@ -1,6 +1,4 @@
 ---
-
-# do not run ssh hardening
 - name: Ensure server is configured
   hosts: localhost
   connection: local
@@ -91,7 +89,7 @@
             curl -X POST --data-binary @../talos/customization.yaml https://factory.talos.dev/schematics | jq '.id'
           register: image_id
 
-        - name: Creating list and dictionary variables
+        - name: Set image url
           ansible.builtin.set_fact:
             image_url: "factory.talos.dev/nocloud-installer/{{ image_id.stdout }}:v1.10.5"
 
