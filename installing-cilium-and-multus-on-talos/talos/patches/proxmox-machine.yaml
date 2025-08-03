@@ -1,0 +1,8 @@
+---
+machine:
+  install:
+    disk: /dev/sda
+  kubelet:
+    nodeIP:
+      validSubnets:
+        - 192.168.70.0/24

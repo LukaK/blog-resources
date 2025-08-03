@@ -1,0 +1,86 @@
+---
+- name: Ensure server is configured
+  hosts: localhost
+  connection: local
+  vars:
+    cluster_name: "test-cluster"
+    output_directory: "./rendered"
+    talos_configuration_location: "rendered/talosconfig"
+    talos_control_ip: "192.168.70.191"
+    talos_worker_ips:
+      - '192.168.70.194'
+      - '192.168.70.195'
+      - '192.168.70.196'
+    talos_control_ips:
+      - '192.168.70.191'
+      - '192.168.70.192'
+      - '192.168.70.193'
+
+  tasks:
+
+    - name: Generate cluster secrets file
+      block:
+        - name: Check if secrets file exists
+          stat:
+            path: "secrets.yaml"
+          register: result
+
+        - name: Generate cluster secrets
+          ansible.builtin.command: talosctl gen secrets
+          when: not result.stat.exists
+
+
+    - name: Generate cluster configuration files
+      block:
+
+        - name: Generate base configuration files
+          ansible.builtin.command: |
+            talosctl gen config --force {{ cluster_name }} "https://{{ talos_control_ip }}:6443" --with-secrets secrets.yaml --config-patch @../talos/patches/common.yaml --output {{ output_directory }}/
+
+
+        - name: Generate proxmox control configuration
+          ansible.builtin.command: |
+            talosctl machineconfig patch {{ output_directory }}/controlplane.yaml --patch @../talos/patches/proxmox-machine.yaml -o {{ output_directory }}/proxmox-control.yaml
+
+        - name: Generate proxmox worker configuration
+          ansible.builtin.command: |
+            talosctl machineconfig patch {{ output_directory }}/worker.yaml --patch @../talos/patches/proxmox-machine.yaml -o {{ output_directory }}/proxmox-worker.yaml
+
+
+    - name: Update talos configuration file
+      ansible.builtin.shell: |
+        talosctl config --talosconfig {{ talos_configuration_location }} endpoint {{ talos_control_ip }}
+
+
+    - name: Applly configuration files
+      block:
+
+        - name: Apply configuration file to control nodes
+          ansible.builtin.shell: |
+            talosctl apply-config --talosconfig {{ talos_configuration_location }} -f {{ output_directory }}/proxmox-control.yaml -n {{ item }} --insecure
+          with_items: "{{ talos_control_ips }}"
+
+
+        - name: Apply configuration file to worker nodes
+          ansible.builtin.shell: |
+            talosctl apply-config --talosconfig {{ talos_configuration_location }} -f {{ output_directory }}/proxmox-worker.yaml -n {{ item }} --insecure
+          with_items: "{{ talos_worker_ips }}"
+
+        - name: Wait untill configuration files are applied
+          ansible.builtin.pause:
+            minutes: 8
+
+    - name: Bootstrap etcd server
+      block:
+
+        - name: Bootstrap etcd server node
+          ansible.builtin.shell: |
+            talosctl bootstrap --talosconfig {{ talos_configuration_location }} -n {{ talos_control_ip }} -e {{ talos_control_ip }}
+
+        - name: Wait untill bootstrap is completed
+          ansible.builtin.pause:
+            minutes: 3
+
+    - name: Retrieve kubectl file
+      ansible.builtin.shell: |
+        talosctl kubeconfig --talosconfig {{ talos_configuration_location }} -n {{ talos_control_ip }} -e {{ talos_control_ip }} .

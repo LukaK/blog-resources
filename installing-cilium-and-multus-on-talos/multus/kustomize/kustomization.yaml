@@ -1,0 +1,7 @@
+resources:
+  - 00-multus-daemonset-thick.yaml
+
+patches:
+  - path: ./volume-mount-patch.yaml
+  - path: ./missing-binaries-patch.yaml
+  - path: ./bug-patch.yaml
