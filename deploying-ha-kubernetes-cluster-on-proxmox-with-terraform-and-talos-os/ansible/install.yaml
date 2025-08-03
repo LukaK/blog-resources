@@ -68,7 +68,7 @@
 
         - name: Wait untill configuration files are applied
           ansible.builtin.pause:
-            minutes: 5
+            minutes: 8
 
     - name: Bootstrap etcd server
       block:
