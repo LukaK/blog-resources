@@ -40,7 +40,7 @@
 
         - name: Generate proxmox control configuration
           ansible.builtin.command: |
-            talosctl machineconfig patch {{ output_directory }}/controlplane.yaml --patch @../talos/patches/proxmox-machine.yaml -o {{ output_directory }}/proxmox-control.yaml
+            talosctl machineconfig patch {{ output_directory }}/controlplane.yaml --patch @../talos/patches/proxmox-machine.yaml --patch @../talos/patches/control-cilium.yaml -o {{ output_directory }}/proxmox-control.yaml
 
         - name: Generate proxmox worker configuration
           ansible.builtin.command: |
@@ -48,8 +48,17 @@
 
 
     - name: Update talos configuration file
-      ansible.builtin.shell: |
-        talosctl config --talosconfig {{ talos_configuration_location }} endpoint {{ talos_control_ip }}
+      block:
+
+        - name: Update talos config file
+          ansible.builtin.shell: |
+            talosctl config --talosconfig {{ talos_configuration_location }} endpoint {{ talos_control_ip }}
+
+        - name: Copy talos config file file
+          ansible.builtin.copy:
+            src: "{{ talos_configuration_location }}"
+            dest: ~/.talos/{{ cluster_name }}
+
 
 
     - name: Applly configuration files
@@ -79,8 +88,39 @@
 
         - name: Wait untill bootstrap is completed
           ansible.builtin.pause:
-            minutes: 3
+            minutes: 5
 
-    - name: Retrieve kubectl file
-      ansible.builtin.shell: |
-        talosctl kubeconfig --talosconfig {{ talos_configuration_location }} -n {{ talos_control_ip }} -e {{ talos_control_ip }} .
+    - name: Upgrade talos os
+      block:
+
+        - name: Get extensions image id
+          ansible.builtin.shell: |
+            curl -X POST --data-binary @../talos/customization.yaml https://factory.talos.dev/schematics | jq '.id'
+          register: image_id
+
+        - name: Set image url
+          ansible.builtin.set_fact:
+            image_url: "factory.talos.dev/nocloud-installer/{{ image_id.stdout }}:v1.10.5"
+
+
+        - name: Upgrade image for control nodes
+          ansible.builtin.shell: |
+            talosctl upgrade --talosconfig {{ talos_configuration_location }} -n {{ item }} -i {{ image_url }} -e {{ talos_control_ip}} --preserve
+          with_items: "{{ talos_control_ips }}"
+
+        - name: Upgrade image for worker nodes
+          ansible.builtin.shell: |
+            talosctl upgrade --talosconfig {{ talos_configuration_location }} -n {{ item }} -i {{ image_url }} -e {{ talos_control_ip}} --preserve
+          with_items: "{{ talos_worker_ips }}"
+
+
+    - name: Get kube config file
+      block:
+        - name: Retrieve kubectl file
+          ansible.builtin.shell: |
+            talosctl kubeconfig --talosconfig {{ talos_configuration_location }} -n {{ talos_control_ip }} -e {{ talos_control_ip }} .
+
+        - name: Copy kubeconfig file
+          ansible.builtin.copy:
+            src: kubeconfig
+            dest: ~/.kube/{{ cluster_name }}

@@ -2,7 +2,9 @@
 
 Blog post: HERE
 
-## Provision infrastructure
+## Install
+
+Provision infrastructure.
 
 ```bash
 pushd terraform
@@ -10,9 +12,32 @@ terraform plan -var-file=values.tfvars -out create-plan && terraform apply creat
 popd
 ```
 
-## Install talos
 
-Update variable values in `ansible/install.yaml`.
+Create cilium manifest file.
+
+```bash
+pushd cilium && make && popd
+```
+
+
+Add cilium to talos config.
+
+```yaml
+# ./talos/patches/control-cilium.yaml
+---
+cluster:
+  inlineManifests:
+    - name: cilium
+      contents: |
+        ---
+        # Source: cilium/templates/cilium-secrets-namespace.yaml
+        apiVersion: v1
+        kind: Namespace
+...
+```
+
+
+Update variable values in `ansible/install.yaml` and install talos cluster.
 
 ```bash
 pushd ansible
@@ -25,18 +50,4 @@ popd
 pushd terraform
 terraform plan --var-file=values.tfvars --destroy --out destroy-plan && terraform apply destroy-plan
 popd
-```
-
-## Example
-
-```bash
-# deploy example pods
-kubectl apply -f examples/pod.yaml
-
-# see ip addresses
-kubectl describe pod -n kube-system sample-pod
-
-# see network interfaces
-kubectl exec -n kube-system -it sample-pod -- /bin/sh
-ip a
 ```
