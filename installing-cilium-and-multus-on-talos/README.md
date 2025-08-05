@@ -2,7 +2,7 @@
 
 Blog post: HERE
 
-## Install
+## Install talos with cilium
 
 Provision infrastructure.
 
@@ -42,6 +42,14 @@ Update variable values in `ansible/install.yaml` and install talos cluster.
 ```bash
 pushd ansible
 ansible-playbook install.yaml
+popd
+```
+
+Install multus.
+```bash
+pushd multus
+make
+kubectl apply -f manifests
 popd
 ```
 
