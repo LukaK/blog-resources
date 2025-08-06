@@ -1,6 +1,4 @@
-# Deploying highly available cluster on proxmox
-
-Blog post: HERE
+# Installing Cilium and Multus on Talos OS for Advanced Kubernetes Networking
 
 ## Install talos with cilium
 
